@@ -1,0 +1,121 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2759
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 HelveticaNeue;}
+{\colortbl;\red255\green255\blue255;\red40\green146\blue255;\red255\green255\blue255;}
+{\*\expandedcolortbl;;\cspthree\c33218\c64182\c97252;\cspthree\c100000\c100000\c100000;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\fs26 \cf2 #include\cf3  "DFRobot_RGBLCD1602.h"\
+\
+// \uc0\u1055 \u1110 \u1076 \u1082 \u1083 \u1102 \u1095 \u1077 \u1085 \u1085 \u1103  \u1076 \u1074 \u1080 \u1075 \u1091 \u1085 \u1110 \u1074 \
+\cf2 #define\cf3  ENA_PIN 10 // PWM \uc0\u1076 \u1083 \u1103  \u1076 \u1074 \u1080 \u1075 \u1091 \u1085 \u1072  A (\u1074 \u1086 \u1076 \u1072 )\
+\cf2 #define\cf3  IN1_PIN 9\
+\cf2 #define\cf3  IN2_PIN 8\
+\
+\cf2 #define\cf3  ENB_PIN 3 // PWM \uc0\u1076 \u1083 \u1103  \u1076 \u1074 \u1080 \u1075 \u1091 \u1085 \u1072  B (\u1087 \u1086 \u1078 \u1080 \u1074 \u1085 \u1110  \u1088 \u1077 \u1095 \u1086 \u1074 \u1080 \u1085 \u1080 )\
+\cf2 #define\cf3  IN3_PIN 4\
+\cf2 #define\cf3  IN4_PIN 5\
+\
+// \uc0\u1055 \u1110 \u1076 \u1082 \u1083 \u1102 \u1095 \u1077 \u1085 \u1085 \u1103  \u1082 \u1085 \u1086 \u1087 \u1086 \u1082 \
+\cf2 #define\cf3  BUTTON_ON_OFF 11 // \uc0\u1050 \u1085 \u1086 \u1087 \u1082 \u1072  \u1076 \u1083 \u1103  \u1074 \u1082 \u1083 \u1102 \u1095 \u1077 \u1085 \u1085 \u1103 /\u1074 \u1080 \u1082 \u1083 \u1102 \u1095 \u1077 \u1085 \u1085 \u1103  \u1076 \u1074 \u1080 \u1075 \u1091 \u1085 \u1110 \u1074 \
+\cf2 #define\cf3  BUTTON_SPEED_UP 12 // \uc0\u1050 \u1085 \u1086 \u1087 \u1082 \u1072  \u1076 \u1083 \u1103  \u1079 \u1073 \u1110 \u1083 \u1100 \u1096 \u1077 \u1085 \u1085 \u1103  \u1096 \u1074 \u1080 \u1076 \u1082 \u1086 \u1089 \u1090 \u1110 \
+\cf2 #define\cf3  BUTTON_SPEED_DOWN 13 // \uc0\u1050 \u1085 \u1086 \u1087 \u1082 \u1072  \u1076 \u1083 \u1103  \u1079 \u1084 \u1077 \u1085 \u1096 \u1077 \u1085 \u1085 \u1103  \u1096 \u1074 \u1080 \u1076 \u1082 \u1086 \u1089 \u1090 \u1110 \
+\
+const int colorR = 255;\
+const int colorG = 0;\
+const int colorB = 0;\
+\
+DFRobot_RGBLCD1602 lcd(/*RGBAddr*/0x60, /*lcdCols*/16, /*lcdRows*/2);\
+\
+bool motorsOn = false;\
+int speed = 0;\
+const int maxSpeed = 255;\
+const int minSpeed = 0;\
+\
+void setup() \{\
+  // \uc0\u1030 \u1085 \u1110 \u1094 \u1110 \u1072 \u1083 \u1110 \u1079 \u1072 \u1094 \u1110 \u1103  \u1056 \u1050 -\u1076 \u1080 \u1089 \u1087 \u1083 \u1077 \u1103 \
+  lcd.init();\
+  lcd.setRGB(colorR, colorG, colorB);\
+  lcd.setCursor(0, 0);\
+  lcd.print("Motor Control");\
+\
+  // \uc0\u1053 \u1072 \u1083 \u1072 \u1096 \u1090 \u1091 \u1074 \u1072 \u1085 \u1085 \u1103  \u1087 \u1110 \u1085 \u1110 \u1074  \u1076 \u1074 \u1080 \u1075 \u1091 \u1085 \u1110 \u1074 \
+  pinMode(ENA_PIN, OUTPUT);\
+  pinMode(IN1_PIN, OUTPUT);\
+  pinMode(IN2_PIN, OUTPUT);\
+  pinMode(ENB_PIN, OUTPUT);\
+  pinMode(IN3_PIN, OUTPUT);\
+  pinMode(IN4_PIN, OUTPUT);\
+\
+  // \uc0\u1053 \u1072 \u1083 \u1072 \u1096 \u1090 \u1091 \u1074 \u1072 \u1085 \u1085 \u1103  \u1087 \u1110 \u1085 \u1110 \u1074  \u1082 \u1085 \u1086 \u1087 \u1086 \u1082 \
+  pinMode(BUTTON_ON_OFF, INPUT_PULLUP);\
+  pinMode(BUTTON_SPEED_UP, INPUT_PULLUP);\
+  pinMode(BUTTON_SPEED_DOWN, INPUT_PULLUP);\
+\
+  // \uc0\u1055 \u1086 \u1095 \u1072 \u1090 \u1082 \u1086 \u1074 \u1110  \u1079 \u1085 \u1072 \u1095 \u1077 \u1085 \u1085 \u1103 \
+  digitalWrite(IN1_PIN, LOW);\
+  digitalWrite(IN2_PIN, HIGH);\
+  digitalWrite(IN3_PIN, HIGH);\
+  digitalWrite(IN4_PIN, LOW);\
+\
+  analogWrite(ENA_PIN, 0);\
+  analogWrite(ENB_PIN, 0);\
+\}\
+\
+void loop() \{\
+  // \uc0\u1063 \u1080 \u1090 \u1072 \u1085 \u1085 \u1103  \u1089 \u1090 \u1072 \u1085 \u1091  \u1082 \u1085 \u1086 \u1087 \u1086 \u1082 \
+  if (digitalRead(BUTTON_ON_OFF) == LOW) \{\
+    delay(50); // \uc0\u1044 \u1077 \u1073 \u1072 \u1091 \u1085 \u1089 \
+    if (digitalRead(BUTTON_ON_OFF) == LOW) \{\
+      motorsOn = !motorsOn;\
+      while (digitalRead(BUTTON_ON_OFF) == LOW); // \uc0\u1063 \u1077 \u1082 \u1072 \u1090 \u1080  \u1087 \u1086 \u1082 \u1080  \u1082 \u1085 \u1086 \u1087 \u1082 \u1072  \u1073 \u1091 \u1076 \u1077  \u1074 \u1110 \u1076 \u1087 \u1091 \u1097 \u1077 \u1085 \u1072 \
+    \}\
+  \}\
+\
+  if (digitalRead(BUTTON_SPEED_UP) == LOW) \{\
+    delay(50); // \uc0\u1044 \u1077 \u1073 \u1072 \u1091 \u1085 \u1089 \
+    if (digitalRead(BUTTON_SPEED_UP) == LOW) \{\
+      if (speed < maxSpeed) \{\
+        speed += 10;\
+      \}\
+      while (digitalRead(BUTTON_SPEED_UP) == LOW); // \uc0\u1063 \u1077 \u1082 \u1072 \u1090 \u1080  \u1087 \u1086 \u1082 \u1080  \u1082 \u1085 \u1086 \u1087 \u1082 \u1072  \u1073 \u1091 \u1076 \u1077  \u1074 \u1110 \u1076 \u1087 \u1091 \u1097 \u1077 \u1085 \u1072 \
+    \}\
+  \}\
+\
+  if (digitalRead(BUTTON_SPEED_DOWN) == LOW) \{\
+    delay(50); // \uc0\u1044 \u1077 \u1073 \u1072 \u1091 \u1085 \u1089 \
+    if (digitalRead(BUTTON_SPEED_DOWN) == LOW) \{\
+      if (speed > minSpeed) \{\
+        speed -= 10;\
+      \}\
+      while (digitalRead(BUTTON_SPEED_DOWN) == LOW); // \uc0\u1063 \u1077 \u1082 \u1072 \u1090 \u1080  \u1087 \u1086 \u1082 \u1080  \u1082 \u1085 \u1086 \u1087 \u1082 \u1072  \u1073 \u1091 \u1076 \u1077  \u1074 \u1110 \u1076 \u1087 \u1091 \u1097 \u1077 \u1085 \u1072 \
+    \}\
+  \}\
+\
+  // \uc0\u1059 \u1087 \u1088 \u1072 \u1074 \u1083 \u1110 \u1085 \u1085 \u1103  \u1076 \u1074 \u1080 \u1075 \u1091 \u1085 \u1072 \u1084 \u1080 \
+  if (motorsOn) \{\
+    // \uc0\u1044 \u1074 \u1080 \u1075 \u1091 \u1085 \u1080  \u1074 \u1074 \u1110 \u1084 \u1082 \u1085 \u1077 \u1085 \u1110 \
+    analogWrite(ENA_PIN, speed);\
+    analogWrite(ENB_PIN, speed);\
+    digitalWrite(IN1_PIN, LOW);\
+    digitalWrite(IN2_PIN, HIGH);\
+    digitalWrite(IN3_PIN, HIGH);\
+    digitalWrite(IN4_PIN, LOW);\
+\
+    lcd.setCursor(0, 1);\
+    lcd.print("Speed: ");\
+    lcd.print(speed);\
+  \} else \{\
+    // \uc0\u1044 \u1074 \u1080 \u1075 \u1091 \u1085 \u1080  \u1074 \u1080 \u1084 \u1082 \u1085 \u1077 \u1085 \u1110 , \u1087 \u1086 \u1076 \u1072 \u1095 \u1072  \u1064 \u1030 \u1052  \u1089 \u1080 \u1075 \u1085 \u1072 \u1083 \u1091 \
+    analogWrite(ENA_PIN, speed);\
+    analogWrite(ENB_PIN, speed);\
+    digitalWrite(IN1_PIN, LOW);\
+    digitalWrite(IN2_PIN, LOW);\
+    digitalWrite(IN3_PIN, LOW);\
+    digitalWrite(IN4_PIN, LOW);\
+    lcd.setCursor(0, 1);\
+    lcd.print("Motors Off     ");\
+  \}\
+\
+  delay(100);\
+\}}
